@@ -52,7 +52,7 @@
     }
 
     async function fetchAndAppendChunk(chunkIndex) {
-      const response = await fetch(`http://localhost:5114/audio/chunk?chunkIndex=${chunkIndex}`);
+      const response = await fetch(`https://demo.homo.tw/audio/chunk?chunkIndex=${chunkIndex}`);
       if (response.ok) {
         const chunk = await response.arrayBuffer();
         sourceBuffer.appendBuffer(chunk);
