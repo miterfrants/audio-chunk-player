@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Audio Streaming</title>
+  <script src="https://unpkg.com/@caitun/mediachunkplayer/dist/player.dist.js"></script>
+
+</head>
+
+<body>
+  <audio controls id="audioPlayer">
+    <source src="" type="audio/mpeg" id="audioSource">
+    Your browser does not support the audio element.
+  </audio>
+
+  <script>
+    const audioPlayer = document.getElementById('audioPlayer');
+    const audioSource = document.getElementById('audioSource');
+    let checkTimer = -1;
+    const mediaSource = new MediaSource();
+    let sourceBuffer;
+    let currentChunkIndex = 0;
+
+    audioSource.src = URL.createObjectURL(mediaSource);
+
+    mediaSource.addEventListener('sourceopen', () => {
+      sourceBuffer = mediaSource.addSourceBuffer('audio/mpeg');
+      fetchAndAppendChunk(currentChunkIndex);
+    });
+
+    audioPlayer.addEventListener('play', (e) => {
+      setTimeout(() => {
+        recursiveCheckCurrentTimeAndAppendNewChunk();
+      }, 500)
+    })
+    audioPlayer.addEventListener('loadedmetadata', (e) => {
+      console.log('loadedmetadata', e);
+    })
+
+    async function recursiveCheckCurrentTimeAndAppendNewChunk() {
+      if (audioPlayer.currentTime / (26 * (currentChunkIndex + 1)) > 0.7) {
+        currentChunkIndex++
+        const result = await fetchAndAppendChunk(currentChunkIndex);
+        if (result) {
+          setTimeout(recursiveCheckCurrentTimeAndAppendNewChunk, 500)
+        }
+      } else {
+        setTimeout(recursiveCheckCurrentTimeAndAppendNewChunk, 500)
+      }
+    }
+
+    async function fetchAndAppendChunk(chunkIndex) {
+      const response = await fetch(`http://localhost:5114/audio/chunk?chunkIndex=${chunkIndex}`);
+      if (response.ok) {
+        const chunk = await response.arrayBuffer();
+        sourceBuffer.appendBuffer(chunk);
+
+        return true;
+      } else {
+        return false;
+      }
+    }
+
+    audioPlayer.load();
+    audioPlayer.play();
+  </script>
+
+</body>
+
+</html>
